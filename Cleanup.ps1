@@ -1,4 +1,15 @@
 
+#Check if the scipt is running in an elevated powershell session
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator) -eq 'True')
+    {
+    Write-Host 'Running in an Elevated Powershell session, continuing' -ForegroundColor Yellow
+    } 
+    else
+    {
+    Write-Host 'This script must be run in an elevated Powershell session, exiting...' -ForegroundColor Red
+    Break
+    }
 
 #Check if this is a RD server
 $RD = Get-WindowsFeature | where-object {$_.name -eq "remote-desktop-services" -AND $_.Installed -eq "true"}
@@ -20,5 +31,13 @@ $TempFiles = Get-Childitem -path c:\windows\temp\* -Recurse | Where-Object {$_.L
     }
 Write-host $tfi' files cleared from c:\windows\temp' -ForegroundColor Yellow
 
+#Windows Error Report 
+Write-host 'Searching Windows Error Report for removal' -ForegroundColor Yellow
+$WERFiles = Get-Childitem -path C:\ProgramData\Microsoft\Windows\WER\ReportQueue\* -Recurse | Where-Object {$_.LastWriteTime -lt (Get-Date).AddDays(-0)}
+    foreach ($WERFile in $WERFiles) {remove-item $WERfile.fullname -whatif
+    $WERi++
+    }
+Write-host $WERi' files cleared from C:\ProgramData\Microsoft\Windows\WER\ReportQueue\' -ForegroundColor Yellow    
+
 #
-dism.exe /online /Cleanup-Image /StartComponentCleanup
+$dism = dism.exe /online /Cleanup-Image /StartComponentCleanup
