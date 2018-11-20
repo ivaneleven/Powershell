@@ -1,4 +1,12 @@
-#Work in progress, for testing only
+<# .SYNOPSIS
+     Expired Root Certificates removal script
+.DESCRIPTION
+     *REMOVING ROOT CERTIFICATES COULD ADVERSELY AFFECT YOUR SYSTEM - THIS IS A WORK IN PROGRESS - RUN FROM A TEST MACHINE FIRST*
+     Removes expired certificates in the Trusted Root Certification Authority Store to prevent TLS communication issue due to store exceeding 16KB limit 
+     and retain certificates required for normal server function.
+.NOTES
+     Author : Ivan Lau
+#>
 
 #Count certificates in the trusted root certificate and expired certificates in the store
 $RootCertCountAll = (get-childitem cert:\localmachine\root).count
@@ -18,10 +26,17 @@ Foreach
             {Write-Host "Certificate $RootCert.subject with thumbprint $RootCert.Thumbprint is marked as not to be deleted, skipping"}
         Else
             {
-                Get-Childitem cert:\localmachine\root -recurse | Where-Object {$_.Thumbprint -eq $Rootcert.Thumbprint}
-                write-host "Certificate $RootCert.subject with thumbprint $RootCert.Thumbprint is removed"
+                $DisplaySub = $Rootcert.subject
+                $DisplayThumb = $RootCert.Thumbprint
+                $DisplayExpiry = $RootCert.NotAfter
+                Get-Childitem cert:\localmachine\root -recurse | Where-Object {$_.Thumbprint -eq $Rootcert.Thumbprint} | Remove-item -whatif
+                $i++
+                Write-Host "Expired Certificate removed from Trusted Root Certificate store `n  Subject: $DisplaySub `n  Thumbprint:$DisplayThumb `n  Expiry:$DisplayExpiry" -ForegroundColor Yellow
             }
         }
 
-Write-host "Cleanup completed"
+if ($i = 0)
+        {Write-host "Cleanup completed, $i Certificate(s) were removed from local Trusted Root Certificate store."}
+    Else
+        {Write-host "Cleanup completed, no certificate was removed from local Trusted Root Certificate store."}
         
