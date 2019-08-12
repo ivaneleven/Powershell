@@ -1,2 +1,2 @@
 # Powershell
-a collection of poorly scripted, not necessarily useful powershell scripts
+a collection of powershell scripts for admin automation and reporting
