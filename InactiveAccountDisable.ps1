@@ -41,7 +41,7 @@ Foreach ($User in $Users)
                 }
             ElseIf($WhitelistChk -eq $null){
                 Get-ADUser $UserAcct -properties * | Select SAMAccountname, DisplayName, GivenName, Surname, Description, LastLogonDate, LogonCount | Export-CSV -path $UserList -append
-                Set-ADUser -Identity $UserAcct -Replace @{Desscription="Account disabled due to inactive for 45 days, please obtain approval from Technical Delivery Manager before reenabling account."} -whatif | disable-ADAccount -whatif
+                Set-ADUser -Identity $UserAcct -Replace @{Desscription="Account disabled due to inactive for 45 days, please obtain approval from manager before reenabling account."} -whatif | disable-ADAccount -whatif
                 Add-Content $Logfile "[$LogEntryPrefix] - [DISABLE] Disabling user $UserAcct"
                 }
             } Catch {
