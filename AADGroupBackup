@@ -1,0 +1,33 @@
+#back up AADGroup that are not synchornized to AD (DirSynEnabled is False) and therefore not recoverable by AD Recycle bin
+
+#Credential must be stored in credential manager beforehand
+Connect-AzureAD 
+$adminCredentials = Get-StoredCredential -Target "Srv_BlahBlah"
+
+#Parameters
+$Path = "c:\temp\AADBackup"
+$Date = get-date -format "dd-MM-yyyy"
+$Finalpath = join-path "$path" "$date"
+
+#Removal of backup older than 90 days
+Get-ChildItem -Path $Path -Directory -recurse| where {$_.LastWriteTime -le $(get-date).Adddays(-90)} | Remove-Item -recurse -force
+
+#Create folder specific to backup instance
+If(!(test-path -PathType container $Finalpath))
+{
+      New-Item -ItemType Directory -Path $Finalpath
+}
+
+#Find folders that are not synchronized back to on-premise AD
+$AzureADGroups = Get-AzureADGroup -All:$true | where{$_.dirsyncenabled -ne "True"}
+$AADGroup_OIDs = $AzureADGroups.ObjectID
+
+#Dump members of each AAD Group to CSV file
+foreach ($AADGroup_OID in $AADGroup_OIDs){
+    $Members = Get-AzureADGroupMember -ObjectId "$AADGroup_OID" | Select DisplayName,UserPrincipalName,UserType
+    $GroupName = (get-azureADGroup -ObjectId $AADGroup_OID).DisplayName
+    $GroupName = $Groupname -replace "\'" -replace "\:" -replace "\\" -replace "\/"
+    $FilePath = join-path "$Finalpath" "$Groupname"
+    $FilePath += '.csv'
+    $Members | Export-csv $Filepath -Append -NoTypeInformation
+}
